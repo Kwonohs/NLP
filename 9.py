@@ -5,7 +5,7 @@ from keras.layers import Dense, Dropout, Activation
 from keras.layers import Embedding
 from keras.layers import Conv1D, GlobalMaxPooling1D
 from keras.datasets import imdb
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score , classification_report
 print(pad_sequences)
 
 from keras.preprocessing import sequence
@@ -54,8 +54,22 @@ model.add(Activation('relu'))
 model.add(Dense(1))
 model.add(Activation('sigmoid'))
 model.compile(loss = 'binary_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
-print(model.sunmmary())
+model.fit(x_train, y_train, batch_size = batch_size, epochs = epochs)
+score = model.evaluate(x_test, y_test, batch_size = batch_size)
 
+y_train_case = model.predict(x_train, batch_size = batch_size)
+y_train_predclass =  y_train_case.argmax(axis = -1)
+y_test_case = model.predict(x_test, batch_size = batch_size)
+y_test_predclass = y_test_case.argmax(axis = -1)
+y_train_predclass.shape = y_train.shape
+y_test_predclass.shape = y_test.shape
+
+print(("\n\nCNN 1D - Train accuracy:"), (round(accuracy_score(y_train, y_train_predclass),3)))
+print("\nCNN 1D of Training data\n", classification_report(y_train,y_train_predclass))
+print("\nCNN 1D - Train Confusion Matrix\n\n", pd.crosstab(y_train, y_train_predclass, rownames = ["Actuall"], colnames = ["Predicted"]))
+print(("\nCNN 1D - Test accuracy:"), (round(accuracy_score(y_test, y_test_predclass),3)))
+print("\nCNN 1D of Test data\n", classification_report(y_test, y_test_predclass))
+print("\nCNN 1D - Test Confusion Matrix\n\n", pd.crosstab(y_test, y_test_predclass, rownames = ["Actuall"], colnames = ["Predicted"]))
 '''
 from sklearn.datasets import fetch_20newsgroups
 newsgroups_train = fetch_20newsgroups(subset = 'train')
