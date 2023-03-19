@@ -1,3 +1,5 @@
+
+'''
 import pandas as pd
 from keras.utils import pad_sequences
 from keras.models import Sequential
@@ -70,6 +72,7 @@ print("\nCNN 1D - Train Confusion Matrix\n\n", pd.crosstab(y_train, y_train_pred
 print(("\nCNN 1D - Test accuracy:"), (round(accuracy_score(y_test, y_test_predclass),3)))
 print("\nCNN 1D of Test data\n", classification_report(y_test, y_test_predclass))
 print("\nCNN 1D - Test Confusion Matrix\n\n", pd.crosstab(y_test, y_test_predclass, rownames = ["Actuall"], colnames = ["Predicted"]))
+'''
 '''
 from sklearn.datasets import fetch_20newsgroups
 newsgroups_train = fetch_20newsgroups(subset = 'train')
