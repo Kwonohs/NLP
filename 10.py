@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import random
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 def get_data(Train_File):
     stories, questions, answers = [], [], []
     story_text = []
@@ -82,13 +83,44 @@ def data_vectorization(data, word2indx, story_maxlen, question_maxlen):
     stories, questions, answers = data
     for story, question, answer in zip(stories, questions, answers):
         xs = [[word2indx[w.lower()] for w in nltk.word_tokenize(s)] for s in story]
+        xs = list(itertools.chain.from_iterable(xs))
         xq = [word2indx[w.lower()] for w in nltk.word_tokenize(question)]
         Xs.append(xs)
         Xq.append(xq)
         Y.append(word2indx[answer.lower()])
-    return pad_sequences(Xs, maxlen = story_maxlen, dtype = object), pad_sequences(Xq, maxlen = question_maxlen, dtype = object), np_utils.to_categorical(Y, num_classes = len(word2indx), dtype = object)
+    return pad_sequences(Xs, maxlen = story_maxlen), pad_sequences(Xq, maxlen = question_maxlen), np_utils.to_categorical(Y, num_classes = len(word2indx), dtype = object)
 
 Xstrain, Xqtrain, Ytrain = data_vectorization(data_train, word2indx, story_maxlen, question_maxlen)
 Xstest, Xqtest, Ytest = data_vectorization(data_test, word2indx, story_maxlen, question_maxlen)
-print("Train story", Xstrain.shpae, "Train question", Xqtrain.shape, "Train answer", Ytrain.shape)
+print("Train story", Xstrain.shape, "Train question", Xqtrain.shape, "Train answer", Ytrain.shape)
 print("Test story", Xstest.shape, "atEST QUESTION", Xqtest.shape, "Test answer", Ytest.shape)
+
+EMBEDDING_SIZE = 128
+LATENT_SIZE = 64
+BATCH_SIZE = 64
+NUM_EPOCHS = 40
+
+story_input = Input(shape=(story_maxlen,))
+question_input = Input(shape=(question_maxlen,))
+
+story_encoder = Embedding(input_dim = vocab_size, output_dim = EMBEDDING_SIZE, input_length = story_maxlen) (story_input)
+story_encoder = Dropout(0.2)(story_encoder)
+
+question_encoder = Embedding(input_dim = vocab_size, output_dim = EMBEDDING_SIZE, input_length = question_maxlen) (question_input)
+question_encoder = Dropout(0.3)(question_encoder)
+match = dot([story_encoder, question_encoder], axes=[2, 2])
+story_encoder_c = Embedding(input_dim = vocab_size, output_dim = question_maxlen, input_length = story_maxlen) (story_input)
+story_encoder_c = Dropout(0.3)(story_encoder_c)
+
+response = add([match, story_encoder_c])
+response = Permute((2, 1))(response)
+
+answer = concatenate([response, question_encoder], axis = -1)
+answer = LSTM(LATENT_SIZE)(answer)
+answer = Dropout(0.2)(answer)
+answer = Dense(vocab_size)(answer)
+
+output = Activation("softmax")(answer)
+model = Model(inputs = [story_input, question_input], outputs = output)
+model.compile(optimizer = "adma", loss = "categorical_crossentropy", metrics = ["accuracy"])
+model.summary()
